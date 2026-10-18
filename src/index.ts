@@ -1,4 +1,6 @@
-import { Grid } from "./types.js"
+import type { GridType } from "./types.js"
+import { Grid } from "./grid.js"
+
 console.log('hello')
 
 const readable = process.stdin.setRawMode(true)
@@ -21,13 +23,14 @@ out.write(random_y.toString())
 console.log('mine_step', mine_step)
 console.log('mine position', mine_pos)
 
-formGrid(size)
+const grid = formGrid(size)
 
 
-function formGrid(size: [number, number]): Grid {
-  return{
+function formGrid(size: [number, number]): GridType {
+  return {
     size: size,
     cells_cnt: size[0] * size[1],
+    mine_count: Math.round(((ROWS * COLS) / 100) * 30),
     grid: Array.from({length: size[0]}, ()=>{
       return Array.from({length:size[1]}, () => {
         return {
@@ -39,9 +42,17 @@ function formGrid(size: [number, number]): Grid {
   })
   }
 }
+placeMines(grid)
 
-function placeMines(grid: Grid) {
-  const mine_step = 10/grid.cells_cnt
+function placeMines(grid: GridType) {
+  const mine_step = 100/grid.cells_cnt
+  for (let i = 0; i < grid.mine_count; i++) {
+    let mine_pos = Math.trunc((Math.random() / mine_step) * 100)
+    let mine_col = Math.trunc(mine_pos/ grid.size[0])
+    let mine_row = mine_pos % grid.size[1]
+    grid.grid[mine_col][mine_row].value = 9
+    console.log(`pos ${mine_col} ${mine_row}`, grid.grid[mine_col][mine_row])
+  }
   
 }
 

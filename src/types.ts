@@ -4,8 +4,9 @@
   flagged: boolean
 }
 
-export type Grid = {
+export type GridType = {
   size: [number, number],
-  cells_cnt: number
+  cells_cnt: number,
+  mine_count: number
   grid:  Cell[][]
 }
