@@ -8,38 +8,12 @@ const out = process.stdout
 out.write('\x1b[?1049h')
 const ROWS = 5 // ROWS
 const COLS = 5 // COLS
-const size: [number, number] = [ROWS, COLS]
-const mine_count = Math.round(((ROWS * COLS) / 100) * 30)
+const mine_count = Math.round(((ROWS * COLS) / 100) * 20)
 
-const mine_step = 100/(ROWS*COLS) // step for one mine 
-const random_y = Math.random()
-
-const mine_pos = Math.trunc((Math.random() / mine_step) * 100) //where mine need to be placed
-
-
-out.write(mine_count.toString())
-out.write('\n')
-out.write(random_y.toString())
-console.log('mine_step', mine_step)
-console.log('mine position', mine_pos)
-
-
-//mine position
-let mine_pos_y = Math.trunc(mine_pos / COLS) 
-let mine_pos_x = (mine_pos % ROWS) - 1 
-console.log(`MINE PLACED: \n -COLUMN: ${mine_pos_y+1} \n -ROW: ${mine_pos_x+1}`)
-console.log((Math.random()*100/25).toFixed())
 
 const grid = new Grid(ROWS, COLS)
 grid.placeMines(mine_count)
 render()
-
-
-const test_grid = new Grid(ROWS, COLS)
-test_grid.placeMines(mine_count)
-  
-
-
 
 function render() {
   clearScreen()

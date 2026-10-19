@@ -1,4 +1,5 @@
-import type { CellValueType, DirentionType } from "./types.js"
+import { Cell } from "./cell.js" 
+
 
 export class Grid {
   rows: number
@@ -51,28 +52,10 @@ export class Grid {
       let mine_pos = Math.trunc((Math.random() / mine_weight) * 100)
       let mine_col = Math.trunc(mine_pos/ this.cols)
       let mine_row = mine_pos % this.cols
-      this.grid[mine_col][mine_row].value = 9
+      let cell = this.grid[mine_col][mine_row]
+      if (!cell.setMine()) {
+        this.placeMines(1)
+      }  
     }
-  }
-}
-
-class Cell {
-  value: CellValueType
-  open: boolean
-  flagged: boolean
-  mines_around: number
-  cells_around: Partial<Record<DirentionType, Cell>>
-  position: {
-    row?: number,
-    col?: number 
-  }
-
-  constructor() {
-    this.value = 0
-    this.open = false
-    this.flagged = false
-    this.mines_around = 0
-    this.cells_around = {}
-    this.position = {}
   }
 }
