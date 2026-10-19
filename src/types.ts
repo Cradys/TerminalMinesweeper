@@ -10,3 +10,8 @@ export type GridType = {
   mine_count: number
   grid:  Cell[][]
 }
+
+export type CellValueType = 0|1|2|3|4|5|6|7|8|9
+
+
+export type DirentionType = "n"|"ne"|"e"|"se"|"s"|"sw"|"w"|"nw" 

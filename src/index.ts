@@ -16,45 +16,12 @@ const random_y = Math.random()
 
 const mine_pos = Math.trunc((Math.random() / mine_step) * 100) //where mine need to be placed
 
-render()
+
 out.write(mine_count.toString())
 out.write('\n')
 out.write(random_y.toString())
 console.log('mine_step', mine_step)
 console.log('mine position', mine_pos)
-
-const grid = formGrid(size)
-
-
-function formGrid(size: [number, number]): GridType {
-  return {
-    size: size,
-    cells_cnt: size[0] * size[1],
-    mine_count: Math.round(((ROWS * COLS) / 100) * 30),
-    grid: Array.from({length: size[0]}, ()=>{
-      return Array.from({length:size[1]}, () => {
-        return {
-          value: 0,
-          open: false,
-          flagged: false
-        }
-      })
-  })
-  }
-}
-placeMines(grid)
-
-function placeMines(grid: GridType) {
-  const mine_step = 100/grid.cells_cnt
-  for (let i = 0; i < grid.mine_count; i++) {
-    let mine_pos = Math.trunc((Math.random() / mine_step) * 100)
-    let mine_col = Math.trunc(mine_pos/ grid.size[0])
-    let mine_row = mine_pos % grid.size[1]
-    grid.grid[mine_col][mine_row].value = 9
-    console.log(`pos ${mine_col} ${mine_row}`, grid.grid[mine_col][mine_row])
-  }
-  
-}
 
 
 //mine position
@@ -63,17 +30,29 @@ let mine_pos_x = (mine_pos % ROWS) - 1
 console.log(`MINE PLACED: \n -COLUMN: ${mine_pos_y+1} \n -ROW: ${mine_pos_x+1}`)
 console.log((Math.random()*100/25).toFixed())
 
+const grid = new Grid(ROWS, COLS)
+grid.placeMines(mine_count)
+render()
+
+
+const test_grid = new Grid(ROWS, COLS)
+test_grid.placeMines(mine_count)
+  
+
+
 
 function render() {
   clearScreen()
   let output = ''
   for (let y = 0; y < COLS; y++) {
     for (let x = 0; x < ROWS; x++) {
-      output += x === 0? '[*]' : ' [*]'
+      output += x === 0? `[${grid.grid[y][x].value}]` : ` [${grid.grid[y][x].value}]`
     }
     output += '\n'
   }
   out.write(output)
+  console.log()
+  console.log(mine_count)
 }
 
 readable.on('data', (key) => {
