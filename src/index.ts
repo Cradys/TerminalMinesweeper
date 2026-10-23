@@ -1,48 +1,75 @@
-import type { GridType } from "./types.js"
 import { Grid } from "./grid.js"
+import { Terminal } from "./terminal.js"
+import type { CommandType } from "./types.js"
 
-console.log('hello')
-
-const readable = process.stdin.setRawMode(true)
-const out = process.stdout
-out.write('\x1b[?1049h')
 const ROWS = 5 // ROWS
 const COLS = 5 // COLS
 const mine_count = Math.round(((ROWS * COLS) / 100) * 20)
+let cursor = { row: 0, col: 0 }
 
 
-const grid = new Grid(ROWS, COLS)
-grid.placeMines(mine_count)
-render()
+const grid = new Grid(ROWS, COLS, mine_count)
 
-function render() {
-  clearScreen()
-  let output = ''
-  for (let y = 0; y < COLS; y++) {
-    for (let x = 0; x < ROWS; x++) {
-      output += x === 0? `[${grid.grid[y][x].value}]` : ` [${grid.grid[y][x].value}]`
-    }
-    output += '\n'
+const terminal = new Terminal(cmdProcessor)
+
+function cmdProcessor(cmd: CommandType) {
+  switch (cmd) {
+    case "up":
+      cursor.row = cursor.row - 1 < 0 ? cursor.row:  cursor.row - 1
+      terminal.redrawCell(grid, cursor)
+      break
+    case "down":
+      cursor.row = cursor.row + 1 > grid.rows - 1 ? cursor.row:  cursor.row + 1
+      terminal.redrawCell(grid, cursor)
+      break
+    case "left":
+      cursor.col = cursor.col - 1 < 0? cursor.col:  cursor.col-1
+      terminal.redrawCell(grid, cursor)
+      break
+    case "right":
+      cursor.col = cursor.col + 1 > grid.cols - 1 ? cursor.col:  cursor.col + 1
+      terminal.redrawCell(grid, cursor)
+      break
+    case "flag":
+      let cell = grid.grid[cursor.row][cursor.col]
+      if (cell.flagged) {
+        cell.setFlagged(false)
+        grid.setFlagAmount(grid.flags_amount+1)
+        if (cell.value === 9) grid.mine_found -= 1
+      } else {
+        if (grid.flags_amount > 0) {
+          if (cell.setFlagged(true)) {
+            grid.setFlagAmount(grid.flags_amount-1)
+            if (cell.value === 9) grid.mine_found += 1
+          }
+        }
+      }
+      terminal.drawStatus(grid)
+      terminal.redrawCell(grid, cursor)
+      break
+    case "open":
+      const result = grid.grid[cursor.row][cursor.col].openCell()
+      switch (result) {
+        case "gg":
+          grid.revealAllCells()
+          terminal.renderGameLost(grid)
+          break
+        case "opened":
+          if (grid.isWon()) {
+            terminal.renderGameWon(grid)
+            break
+          }
+          terminal.render(grid, cursor)
+          break
+        case "ignored":
+          break 
+      }
+      break
+    case "quit":
+      terminal.close()
+      process.exit()
+      break
   }
-  out.write(output)
-  console.log()
-  console.log(mine_count)
 }
 
-readable.on('data', (key) => {
-  const k = key.toString()
-  if (k === 'q' || k === '\x03') {   // \x03 — це Ctrl+C
-    readable.setRawMode(false)
-    out.write('\x1b[?1049l')
-    process.exit()
-  }
-  if (k === 'c') {
-    clearScreen()
-  }
-  process.stdout.write(key)
-})
-
-function clearScreen() {
-  out.cursorTo(0, 0)
-  out.clearScreenDown()
-}
+terminal.render(grid, cursor)

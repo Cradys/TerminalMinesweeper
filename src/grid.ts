@@ -5,15 +5,19 @@ export class Grid {
   rows: number
   cols: number
   cells_amount: number
-  mine_count?: number
+  mine_amount: number
+  flags_amount: number
+  mine_found = 0
   grid: Cell[][]
 
-  constructor(rows: number, cols: number, mine_count?: number) {
+  constructor(rows: number, cols: number, mine_amount: number) {
     this.rows = rows 
     this.cols = cols
     this.cells_amount = rows * cols
-    this.mine_count = mine_count
-    this.grid = this.formGrid() 
+    this.mine_amount = mine_amount
+    this.flags_amount = mine_amount
+    this.grid = this.formGrid()
+    this.placeMines(this.mine_amount)
   }
 
   formGrid(): Cell[][] {
@@ -23,6 +27,30 @@ export class Grid {
       })
     })
     return this.linkCellsAround(grid)
+    
+  }
+
+  setFlagAmount(amount: number): boolean {
+    if (amount < 0 || amount > this.mine_amount) return false
+    this.flags_amount = amount
+    return true
+  }
+
+  revealAllCells() {
+    for (const row of this.grid) {
+      for (const cell of row) {
+        cell.open = true
+      }
+    }
+  }
+
+  isWon() : boolean {
+    for (const row of this.grid) {
+      for (const cell of row) {
+        if (cell.value !== 9 && !cell.open) return false;
+      }
+    }
+    return true
   }
 
   private linkCellsAround(grid: Cell[][]): Cell[][] {
@@ -45,8 +73,7 @@ export class Grid {
   }
   
 
-  placeMines(amount: number): void {
-    this.mine_count = amount
+  private placeMines(amount: number): void {
     const mine_weight = 100/this.cells_amount
     for (let i=0; i<amount; i++) {
       let mine_pos = Math.trunc((Math.random() / mine_weight) * 100)

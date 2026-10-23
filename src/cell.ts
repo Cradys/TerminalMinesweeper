@@ -29,7 +29,7 @@ export class Cell {
         continue
       }
       if (cell.value === 8) {
-        throw Error(`Amount of can't be grater then 8 ${this}`)
+        throw Error(`Amount of can't be grater then 8`)
       }
       cell.value += 1
     }
@@ -54,5 +54,13 @@ export class Cell {
     }
 
     return "opened"
+  }
+
+  setFlagged(status: boolean): boolean {
+    if (status === this.flagged) return false
+    if (this.open) return false
+
+    this.flagged = status
+    return true
   }
 }
