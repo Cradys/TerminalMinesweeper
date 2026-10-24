@@ -2,8 +2,8 @@ import { Grid } from "./grid.js"
 import { Terminal } from "./terminal.js"
 import type { CommandType } from "./types.js"
 
-const ROWS = 5 // ROWS
-const COLS = 5 // COLS
+const ROWS = 10 // ROWS
+const COLS = 10 // COLS
 const mine_count = Math.round(((ROWS * COLS) / 100) * 20)
 let cursor = { row: 0, col: 0 }
 

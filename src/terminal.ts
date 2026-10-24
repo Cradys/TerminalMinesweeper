@@ -132,13 +132,13 @@ export class Terminal {
   }
 
   private findCellSymbol(cell: Cell, reveal=false): string {
-    if (reveal && cell.value === 9) return cell.flagged ? '🚩' : '💣'
+    if (reveal && cell.value === 9) return cell.flagged ? '⚑' : '●'
     if (reveal && cell.flagged) return 'X' // флаг стояв не на міні
 
-    if (cell.flagged) return 'F'
+    if (cell.flagged) return '⚑'
     if (!cell.open) return '#'
     if (cell.value === 0) return ' '
-    if (cell.value === 9) return 'B'
+    if (cell.value === 9) return '●'
     return cell.value.toString()
   }
 }
