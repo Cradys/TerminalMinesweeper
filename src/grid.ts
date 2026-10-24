@@ -77,9 +77,9 @@ export class Grid {
     const mine_weight = 100/this.cells_amount
     for (let i=0; i<amount; i++) {
       let mine_pos = Math.trunc((Math.random() / mine_weight) * 100)
-      let mine_col = Math.trunc(mine_pos/ this.cols)
-      let mine_row = mine_pos % this.cols
-      let cell = this.grid[mine_col][mine_row]
+      let mine_row = Math.trunc(mine_pos / this.cols)
+      let mine_col = mine_pos % this.cols
+      let cell = this.grid[mine_row][mine_col]
       if (!cell.setMine()) {
         this.placeMines(1)
       }  

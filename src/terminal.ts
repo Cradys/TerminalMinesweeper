@@ -1,12 +1,17 @@
 import type { Cell } from "./cell.js"
 import type { Grid } from "./grid.js"
-import type { CommandType } from "./types.js"
+import type { CommandType, CursorType } from "./types.js"
+
+const KEY_LABELS: Record<CommandType, string> = {
+  up: "↑", down: "↓", left: "←", right: "→",
+  open: "Enter", flag: "f", quit: "q",
+}
 
 export class Terminal {
   private out = process.stdout
   private input = process.stdin
   // де було виділення минулого разу; null — ще нічого не малювали
-  private lastCursor: { row: number, col: number } | null = null
+  private lastCursor: CursorType | null = null
 
   // викликається при натисканні: Terminal не знає, ХТО слухає
   constructor(onCommand: (cmd: CommandType) => void) {
@@ -29,6 +34,26 @@ export class Terminal {
     if (key === 'f') return 'flag'
     if (key === 'q' || key === '\x03') return 'quit' // \x03 — Ctrl+C
     return undefined
+  }
+
+  renderMenu(levels: string[], allowed_cmd: string[]) {
+    this.clearScreen()
+    let output = ''
+    output += 'Choose game difficulty\n\n'
+    for (let i = 0; i < levels.length; i++) {
+      output += `${i+1} [${levels[i]}]\n`
+    }
+    this.out.write(output)
+  }
+
+  drawFooter(cursor: CursorType, allowed_cmd: { cmd: CommandType, label: string }[]) {
+    let output = ''
+    this.out.cursorTo(this.out.rows+2)
+    for (let cmd of allowed_cmd) {
+      output += `${KEY_LABELS[cmd.cmd]} ${cmd.label} `
+    }
+    this.out.write(output)
+    this.out.cursorTo(cursor.row, cursor.row)
   }
 
   render(grid: Grid, cursor: { row: number, col: number }): void {
