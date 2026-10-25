@@ -1,19 +1,17 @@
 import { Cell } from "./cell.js" 
+import type { OpenCellResultType } from "./types.js"
 
 
 export class Grid {
   rows: number
   cols: number
-  cells_amount: number
   mine_amount: number
   flags_amount: number
-  mine_found = 0
   grid: Cell[][]
 
   constructor(rows: number, cols: number, mine_amount: number) {
     this.rows = rows 
     this.cols = cols
-    this.cells_amount = rows * cols
     this.mine_amount = mine_amount
     this.flags_amount = mine_amount
     this.grid = this.formGrid()
@@ -30,16 +28,43 @@ export class Grid {
     
   }
 
-  setFlagAmount(amount: number): boolean {
-    if (amount < 0 || amount > this.mine_amount) return false
-    this.flags_amount = amount
+  changeFlagState(row: number, col: number): boolean {
+    const cell = this.grid[row][col]
+
+    if (cell.isFlagged()) {
+      if (!cell.changeFlaggedState()) return false
+      this.flags_amount++
+    } else {
+      if (this.flags_amount <= 0) {
+        return false
+      }
+      if (!cell.changeFlaggedState()) return false
+      this.flags_amount--
+    }
     return true
+  }
+
+  openCell(row: number, col: number): OpenCellResultType {
+    const cell = this.grid[row][col]
+    return cell.openCell()
+  }
+
+  minesFoundAmount(): number {
+    let mines_found = 0
+    for (let row of this.grid) {
+      for (let cell of row) {
+        if(cell.isFlagged() && cell.isMine()) {
+          mines_found++
+        }
+      }
+    }
+    return mines_found
   }
 
   revealAllCells() {
     for (const row of this.grid) {
       for (const cell of row) {
-        cell.open = true
+        cell.setOpen()
       }
     }
   }
@@ -47,7 +72,7 @@ export class Grid {
   isWon() : boolean {
     for (const row of this.grid) {
       for (const cell of row) {
-        if (cell.value !== 9 && !cell.open) return false;
+        if (!cell.isMine() && !cell.isOpen()) return false;
       }
     }
     return true
@@ -74,7 +99,7 @@ export class Grid {
   
 
   private placeMines(amount: number): void {
-    const mine_weight = 100/this.cells_amount
+    const mine_weight = 100 / (this.rows * this.cols)
     for (let i=0; i<amount; i++) {
       let mine_pos = Math.trunc((Math.random() / mine_weight) * 100)
       let mine_row = Math.trunc(mine_pos / this.cols)

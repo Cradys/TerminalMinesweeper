@@ -1,6 +1,6 @@
 import type { Cell } from "./cell.js"
 import type { Grid } from "./grid.js"
-import type { CommandType, CursorType } from "./types.js"
+import type { CommandType, CursorType, HintType } from "./types.js"
 
 const KEY_LABELS: Record<CommandType, string> = {
   up: "↑", down: "↓", left: "←", right: "→",
@@ -11,7 +11,8 @@ export class Terminal {
   private out = process.stdout
   private input = process.stdin
   // де було виділення минулого разу; null — ще нічого не малювали
-  private lastCursor: CursorType | null = null
+  private lastCell: CursorType | null = null
+  private content_bottom: number = 0
 
   // викликається при натисканні: Terminal не знає, ХТО слухає
   constructor(onCommand: (cmd: CommandType) => void) {
@@ -36,27 +37,35 @@ export class Terminal {
     return undefined
   }
 
-  renderMenu(levels: string[], allowed_cmd: string[]) {
+  renderMenu(levels: string[], selected_level: number) {
     this.clearScreen()
-    let output = ''
+    let output: string = ''
+    let cursor = { row: selected_level + 2, col: 0}
+
     output += 'Choose game difficulty\n\n'
     for (let i = 0; i < levels.length; i++) {
-      output += `${i+1} [${levels[i]}]\n`
+      output += selected_level === i ? (`${i+1} █${levels[i]}█\n`) : (`${i+1} [${levels[i]}]\n`)
     }
     this.out.write(output)
+
+    this.content_bottom = output.split('\n').length - 1
+    this.out.cursorTo(cursor.col, cursor.row)
   }
 
-  drawFooter(cursor: CursorType, allowed_cmd: { cmd: CommandType, label: string }[]) {
-    let output = ''
-    this.out.cursorTo(this.out.rows+2)
-    for (let cmd of allowed_cmd) {
-      output += `${KEY_LABELS[cmd.cmd]} ${cmd.label} `
-    }
+  drawFooter(allowed_cmd: HintType[]) {
+    this.out.write('\x1b7')   // зберегти позицію курсора
+    this.out.cursorTo(0, this.content_bottom + 2)
+    this.out.clearLine(1)
+
+    const output = allowed_cmd
+      .map(hint => `${hint.cmd.map(k => KEY_LABELS[k]).join('')} - ${hint.label}`)
+      .join('   ')
+
     this.out.write(output)
-    this.out.cursorTo(cursor.row, cursor.row)
+    this.out.write('\x1b8')   // повернути курсор туди, де він був
   }
 
-  render(grid: Grid, cursor: { row: number, col: number }): void {
+  renderPlaying(grid: Grid, cursor: CursorType): void {
     this.clearScreen()
     let output = ''
     for (let row = 0; row < grid.rows; row++) {
@@ -70,29 +79,34 @@ export class Terminal {
       output += '\n'
     }
     this.out.write(output)
+    this.content_bottom = output.split('\n').length
     this.drawStatus(grid)
     this.redrawCell(grid, cursor)
-    this.lastCursor = { ...cursor }
+    this.lastCell = { ...cursor }
   }
 
   // перемальовує лише 2 клітинки: стару (зняти виділення) і нову (виділити)
-  redrawCell(grid: Grid, cursor: { row: number, col: number }): void {
-    if (this.lastCursor) {
-      this.drawCell(grid, this.lastCursor.row, this.lastCursor.col, false)
+  redrawCell(grid: Grid, cursor: CursorType): void {
+    if (this.lastCell) {
+      this.drawCell(grid, this.lastCell.row, this.lastCell.col, false)
     }
     this.drawCell(grid, cursor.row, cursor.col, true)
     this.out.cursorTo(cursor.col * 3 + 1, cursor.row)
-    this.lastCursor = { ...cursor }
+    this.lastCell = { ...cursor }
   }
 
   drawStatus(grid: Grid, reveal=false) {
+    this.out.write('\x1b7') 
     this.out.cursorTo(0, grid.rows+2)
     this.out.clearLine(0)
     this.out.write(`Flags left (mines): ${grid.flags_amount}`)
+    this.content_bottom++
     if (reveal) {
       this.out.cursorTo(0, grid.rows+3)
-      this.out.write(`Bombs found: ${grid.mine_found}`)
+      this.out.write(`Bombs found: ${grid.minesFoundAmount()}`)
+      this.content_bottom++
     }
+    this.out.write('\x1b8')
   }
 
   // вимкнути raw-режим і повернути звичайний екран
@@ -157,13 +171,13 @@ export class Terminal {
   }
 
   private findCellSymbol(cell: Cell, reveal=false): string {
-    if (reveal && cell.value === 9) return cell.flagged ? '⚑' : '●'
-    if (reveal && cell.flagged) return 'X' // флаг стояв не на міні
+    if (reveal && cell.isMine()) return cell.isFlagged() ? '⚑' : '●'
+    if (reveal && cell.isFlagged()) return 'X' // флаг стояв не на міні
 
-    if (cell.flagged) return '⚑'
-    if (!cell.open) return '#'
-    if (cell.value === 0) return ' '
-    if (cell.value === 9) return '●'
-    return cell.value.toString()
+    if (cell.isFlagged()) return '⚑'
+    if (!cell.isOpen()) return '#'
+    if (cell.isEmpty()) return ' '
+    if (cell.isMine()) return '●'
+    return cell.getValue().toString()
   }
 }

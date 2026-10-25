@@ -1,10 +1,10 @@
-import type { CellValueType, DirentionType } from "./types.js"
+import type { CellValueType, DirentionType, OpenCellResultType } from "./types.js"
 
 
 export class Cell {
-  value: CellValueType
-  open: boolean
-  flagged: boolean
+  private value: CellValueType
+  private open: boolean
+  private flagged: boolean
   cells_around: Partial<Record<DirentionType, Cell>>
 
   constructor() {
@@ -14,8 +14,10 @@ export class Cell {
     this.cells_around = {}
   }
 
+  getValue(): CellValueType { return this.value }
+
   setMine() {
-    if (this.value === 9) {
+    if (this.isMine()) {
       return false
     }
     this.value = 9
@@ -23,31 +25,29 @@ export class Cell {
     return true
   }
 
-  private incrementNeighborCounts() {
-    for (let cell of Object.values(this.cells_around)) {
-      if (cell === undefined || cell.value === 9) {
-        continue
-      }
-      if (cell.value === 8) {
-        throw Error(`Amount of can't be grater then 8`)
-      }
-      cell.value += 1
-    }
-  }
+  setOpen(): void { this.open = true }
 
-  openCell(): "gg" | "ignored" | "opened" {
-    if (this.open) return "ignored"
+  isFlagged(): boolean { return this.flagged }
 
-    if (this.flagged) return "ignored"
+  isOpen(): boolean { return this.open }
 
-    if (this.value === 9) {
-      this.open = true
+  isMine(): boolean { return this.value === 9 ? true : false }
+
+  isEmpty(): boolean { return this.value === 0 ? true : false }
+
+  openCell(): OpenCellResultType {
+    if (this.isOpen()) return "ignored"
+
+    if (this.isFlagged()) return "ignored"
+
+    if (this.isMine()) {
+      this.setOpen()
       return "gg"
     }
 
-    this.open = true
+    this.setOpen()
 
-    if (this.value === 0) {
+    if (this.isEmpty()) {
       for (let cell of Object.values(this.cells_around)){
         cell?.openCell()
       }
@@ -56,11 +56,23 @@ export class Cell {
     return "opened"
   }
 
-  setFlagged(status: boolean): boolean {
-    if (status === this.flagged) return false
-    if (this.open) return false
-
-    this.flagged = status
+  changeFlaggedState(): boolean {
+    if (this.isOpen()) return false
+    this.flagged = this.isFlagged() ? false : true
     return true
+  }
+
+
+
+  private incrementNeighborCounts() {
+    for (let cell of Object.values(this.cells_around)) {
+      if (cell === undefined || cell.isMine()) {
+        continue
+      }
+      if (cell.value === 8) {
+        throw Error(`Amount of can't be grater then 8`)
+      }
+      cell.value += 1
+    }
   }
 }
