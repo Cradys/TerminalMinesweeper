@@ -51,8 +51,8 @@ export class Grid {
 
   minesFoundAmount(): number {
     let mines_found = 0
-    for (let row of this.grid) {
-      for (let cell of row) {
+    for (const row of this.grid) {
+      for (const cell of row) {
         if(cell.isFlagged() && cell.isMine()) {
           mines_found++
         }
@@ -83,15 +83,19 @@ export class Grid {
       for (let col = 0; col < grid[row].length; col++) {
         //link neighbors cells
         //if out of index - undefined
-        let cell = grid[row][col]
-        cell.cells_around.n  = grid[row - 1]?.[col]
-        cell.cells_around.ne = grid[row - 1]?.[col + 1]
-        cell.cells_around.e  = grid[row]?.[col + 1]
-        cell.cells_around.se = grid[row + 1]?.[col + 1]
-        cell.cells_around.s  = grid[row + 1]?.[col]
-        cell.cells_around.sw = grid[row + 1]?.[col - 1]
-        cell.cells_around.w  = grid[row]?.[col - 1]
-        cell.cells_around.nw = grid[row - 1]?.[col - 1]
+        const cell = grid[row][col]
+        const neighbors: (Cell | undefined)[] = [
+          grid[row - 1]?.[col],
+          grid[row - 1]?.[col + 1],
+          grid[row]?.[col + 1],
+          grid[row + 1]?.[col + 1],
+          grid[row + 1]?.[col],
+          grid[row + 1]?.[col - 1],
+          grid[row]?.[col - 1],
+          grid[row - 1]?.[col - 1]
+        ]
+
+        cell.cells_around = neighbors.filter(n => n !== undefined)
       } 
     }
     return grid
@@ -101,10 +105,10 @@ export class Grid {
   private placeMines(amount: number): void {
     const mine_weight = 100 / (this.rows * this.cols)
     for (let i=0; i<amount; i++) {
-      let mine_pos = Math.trunc((Math.random() / mine_weight) * 100)
-      let mine_row = Math.trunc(mine_pos / this.cols)
-      let mine_col = mine_pos % this.cols
-      let cell = this.grid[mine_row][mine_col]
+      const mine_pos = Math.trunc((Math.random() / mine_weight) * 100)
+      const mine_row = Math.trunc(mine_pos / this.cols)
+      const mine_col = mine_pos % this.cols
+      const cell = this.grid[mine_row][mine_col]
       if (!cell.setMine()) {
         this.placeMines(1)
       }  

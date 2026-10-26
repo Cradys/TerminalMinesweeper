@@ -8,10 +8,13 @@
   "main": "src/index.js",
   "scripts": {
     "start": "tsx src/index.ts",
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "lint": "oxlint --type-aware src"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "oxlint": "^1.89.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

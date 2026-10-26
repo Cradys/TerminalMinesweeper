@@ -1,17 +1,17 @@
-import type { CellValueType, DirentionType, OpenCellResultType } from "./types.js"
+import type { CellValueType, OpenCellResultType } from "./types.js"
 
 
 export class Cell {
   private value: CellValueType
   private open: boolean
   private flagged: boolean
-  cells_around: Partial<Record<DirentionType, Cell>>
+  cells_around: Cell[]
 
   constructor() {
     this.value = 0
     this.open = false
     this.flagged = false
-    this.cells_around = {}
+    this.cells_around = []
   }
 
   getValue(): CellValueType { return this.value }
@@ -48,8 +48,8 @@ export class Cell {
     this.setOpen()
 
     if (this.isEmpty()) {
-      for (let cell of Object.values(this.cells_around)){
-        cell?.openCell()
+      for (const cell of this.cells_around){
+        cell.openCell()
       }
     }
 
@@ -65,8 +65,8 @@ export class Cell {
 
 
   private incrementNeighborCounts() {
-    for (let cell of Object.values(this.cells_around)) {
-      if (cell === undefined || cell.isMine()) {
+    for (const cell of this.cells_around) {
+      if (cell.isMine()) {
         continue
       }
       if (cell.value === 8) {

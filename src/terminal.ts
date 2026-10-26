@@ -3,9 +3,24 @@ import type { Grid } from "./grid.js"
 import type { CommandType, CursorType, HintType } from "./types.js"
 
 const KEY_LABELS: Record<CommandType, string> = {
-  up: "↑", down: "↓", left: "←", right: "→",
-  open: "Enter", flag: "f", quit: "q",
+  up: '↑', down: '↓', left: '←', right: '→',
+  open: 'Enter/Space', flag: 'f', quit: 'q',
+  restart: 'r',
 }
+
+const GAME_LOST = [
+      '💣💣💣💣💣💣💣💣💣',
+      '╔═════════════════╗',
+      '║    GAME OVER    ║',
+      '╚═════════════════╝',
+      '💣💣💣💣💣💣💣💣💣',
+    ].join('\n')
+
+const YOU_WIN = [
+      '╔═════════════════╗',
+      '║     YOU WIN     ║',
+      '╚═════════════════╝',
+    ].join('\n')
 
 export class Terminal {
   private out = process.stdout
@@ -34,13 +49,14 @@ export class Terminal {
     if (key === '\r' || key === ' ') return 'open'   // Enter або пробіл
     if (key === 'f') return 'flag'
     if (key === 'q' || key === '\x03') return 'quit' // \x03 — Ctrl+C
+    if (key === 'r') return 'restart'
     return undefined
   }
 
   renderMenu(levels: string[], selected_level: number) {
     this.clearScreen()
     let output: string = ''
-    let cursor = { row: selected_level + 2, col: 0}
+    const cursor = { row: selected_level + 2, col: 0}
 
     output += 'Choose game difficulty\n\n'
     for (let i = 0; i < levels.length; i++) {
@@ -79,7 +95,7 @@ export class Terminal {
       output += '\n'
     }
     this.out.write(output)
-    this.content_bottom = output.split('\n').length
+    this.content_bottom = output.split('\n').length - 1
     this.drawStatus(grid)
     this.redrawCell(grid, cursor)
     this.lastCell = { ...cursor }
@@ -100,11 +116,9 @@ export class Terminal {
     this.out.cursorTo(0, grid.rows+2)
     this.out.clearLine(0)
     this.out.write(`Flags left (mines): ${grid.flags_amount}`)
-    this.content_bottom++
     if (reveal) {
       this.out.cursorTo(0, grid.rows+3)
       this.out.write(`Bombs found: ${grid.minesFoundAmount()}`)
-      this.content_bottom++
     }
     this.out.write('\x1b8')
   }
@@ -115,30 +129,30 @@ export class Terminal {
     this.out.write('\x1b[?1049l')
   }
 
-  renderGameLost(grid: Grid): void {
-    this.drawRevealedGrid(grid)
-    this.drawBanner(grid, [
-      '💣💣💣💣💣💣💣💣💣',
-      '╔═════════════════╗',
-      '║    GAME OVER    ║',
-      '╚═════════════════╝',
-      '💣💣💣💣💣💣💣💣💣',
-      'Press q to quit',
-    ])
+  renderGameOver(grid: Grid, won: boolean): void {
+    let output = ''
+    output += this.drawRevealedGrid(grid)
+    output += '\n'
+    output += won ? '' : `Bombs found: ${grid.minesFoundAmount()}\n`
+    output += `Bombs total amount: ${grid.mine_amount} `
+    output += '\n'
+    output += won ? YOU_WIN : GAME_LOST
+    this.out.write(output)
+    this.content_bottom = output.split('\n').length -1
   }
 
   renderGameWon(grid: Grid): void {
     this.drawRevealedGrid(grid)
-    this.drawBanner(grid, [
+    const output = [
       '╔═════════════════╗',
       '║     YOU WIN     ║',
       '╚═════════════════╝',
-      'Press q to quit',
-    ])
+    ].join('\n')
+    this.out.write(output)
   }
 
   // все поле з показаними мінами, без виділення курсора
-  private drawRevealedGrid(grid: Grid): void {
+  private drawRevealedGrid(grid: Grid): string {
     this.clearScreen()
     let output = ''
     for (let row = 0; row < grid.rows; row++) {
@@ -147,16 +161,7 @@ export class Terminal {
       }
       output += '\n'
     }
-    this.out.write(output)
-    this.drawStatus(grid, true)
-  }
-
-  // кожен рядок ставимо через cursorTo: write сам на новий рядок не переходить
-  private drawBanner(grid: Grid, lines: string[]): void {
-    lines.forEach((line, i) => {
-      this.out.cursorTo(0, grid.rows + 4 + i)
-      this.out.write(line)
-    })
+    return output
   }
 
   private drawCell(grid: Grid, row: number, col: number, selected: boolean): void {
@@ -175,7 +180,7 @@ export class Terminal {
     if (reveal && cell.isFlagged()) return 'X' // флаг стояв не на міні
 
     if (cell.isFlagged()) return '⚑'
-    if (!cell.isOpen()) return '#'
+    if (!reveal && !cell.isOpen()) return '#'
     if (cell.isEmpty()) return ' '
     if (cell.isMine()) return '●'
     return cell.getValue().toString()
